@@ -24,7 +24,6 @@ venv
 
 # Docker files (not needed inside the image)
 docker-compose.yml
-Dockerfile
 .dockerignore
 
 # Documentation (not needed at runtime)
