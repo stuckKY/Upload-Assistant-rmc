@@ -5,7 +5,7 @@ import json
 import os
 import re
 import urllib.parse
-from typing import Any, Union, cast
+from typing import Any, Optional, Union, cast
 from urllib.parse import ParseResult
 
 import aiofiles
@@ -446,9 +446,17 @@ class DescriptionBuilder:
 
         return ""
 
-    async def get_custom_signature(self) -> str:
+    async def get_custom_signature(self, meta: Optional[dict[str, Any]] = None) -> str:
         custom_signature: str = ""
         try:
+            # CLI --signature flag takes priority over config
+            if meta:
+                cli_sig = meta.get("custom_signature")
+                if isinstance(cli_sig, list):
+                    cli_sig = cli_sig[0] if cli_sig else ""
+                if cli_sig:
+                    return str(cli_sig)
+
             raw_signature = self.tracker_config.get(
                 "custom_signature", self.config["DEFAULT"].get("custom_signature", "")
             )
@@ -623,7 +631,7 @@ class DescriptionBuilder:
         desc_parts.append(discs_and_screenshots)
 
         # Custom Signature
-        desc_parts.append(await self.get_custom_signature())
+        desc_parts.append(await self.get_custom_signature(meta))
 
         # UA Signature
         if not signature:

@@ -352,6 +352,11 @@ class TRACKER_SETUP:
                 console.print(f"[bold red]Failed to parse banned group file for '{tracker}'.")
                 return False
 
+        # Merge global banned groups from config with tracker-specific list
+        global_banned = self.config.get('DEFAULT', {}).get('banned_groups', [])
+        if global_banned:
+            banned_group_list = list(banned_group_list) + [g for g in global_banned if g not in banned_group_list]
+
         for tag in banned_group_list:
             if isinstance(tag, list):
                 tag_list = [str(item) for item in cast(list[Any], tag)]

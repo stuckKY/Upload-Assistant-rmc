@@ -21,6 +21,11 @@ config = {
         # If less than the number of trackers pass the checking, exit immediately.
         "tracker_pass_checks": 1,
 
+        # Global banned groups list - these groups will be banned across ALL trackers,
+        # in addition to each tracker's own banned groups list.
+        # Example: ["YIFY", "aXXo", "STUTTERSHIT"]
+        "banned_groups": [],
+
         # Set true to suppress config warnings on startup
         "suppress_warnings": False,
 
@@ -350,7 +355,7 @@ config = {
 
     "TRACKERS": {
         # Which trackers do you want to upload to?
-        # Available tracker: A4K, ACM, AITHER, ANT, AR, ASC, AZ, BHD, BHDTV, BJS, BLU, BT, CBR, CZ, DC, DP, DT, EMUW, FF, FL, FNP, FRIKI, GPW, HDB, HDS, HDT, HHD, HUNO, IHD, IS, ITT, LCD, LDU, LST, LT, LUME, MTV, NBL, OE, OTW, PHD, PT, PTER, PTP, PTS, PTT, R4E, RAS, RF, RMC, RTF, SAM, SHRI, SN, SP, SPD, STC, THR, TIK, TL, TLZ, TOS, TTG, TTR, TVC, ULCX, UTP, YOINK, YUS
+        # Available tracker: A4K, ACM, AITHER, ANT, AR, ASC, AZ, BHD, BHDTV, BJS, BLU, BT, CBR, CZ, DC, DP, DT, EMUW, FF, FL, FNP, FRIKI, GPW, HDB, HDS, HDT, HHD, HUNO, IHD, IS, ITT, LCD, LDU, LST, LT, LUME, MTV, NBL, OE, OTW, PHD, PT, PTER, PTP, PTS, PTT, R4E, RAS, RF, RTF, SAM, SHRI, SN, SP, SPD, STC, THR, TIK, TL, TLZ, TOS, TTG, TTR, TVC, ULCX, UTP, YOINK, YUS
         # Only add the trackers you want to upload to on a regular basis
         "default_trackers": "",
 
@@ -783,14 +788,6 @@ config = {
             "link_dir_name": "",
             "api_key": "",
             "anon": False,
-        },
-        "RMC": {
-            # Instead of using the tracker acronym for folder name when sym/hard linking, you can use a custom name
-            "link_dir_name": "",
-            "api_key": "",
-            "anon": False,
-            # Send uploads to RMC modq for staff approval
-            "modq": False,
         },
         "RTF": {
             # Instead of using the tracker acronym for folder name when sym/hard linking, you can use a custom name

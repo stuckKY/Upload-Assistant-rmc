@@ -146,6 +146,7 @@ class Args:
         parser.add_argument('--untouched', dest='untouched', action='store_true', required=False, help="Set when a completely untouched disc at TIK")
         parser.add_argument('-manual_dvds', '--manual_dvds', nargs=1, required=False, help="Override the default number of DVD's (eg: use 2xDVD9+DVD5 instead)", type=str, dest='manual_dvds', default="")
         parser.add_argument('-pb', '--desclink', dest='description_link', nargs=1, required=False, help="Custom Description (link to hastebin/pastebin)")
+        parser.add_argument('-sig', '--signature', dest='custom_signature', nargs=1, required=False, help="Custom signature appended to the end of the description (BBCode supported)", type=str, default="")
         parser.add_argument('-df', '--descfile', dest='description_file', nargs=1, required=False, help="Custom Description (path to file OR filename in current working directory)")
         parser.add_argument('-menus', '--disc-menus', dest='path_to_menu_screenshots', nargs=1, required=False, help="Raw Disc only (Blu-ray/DVD). Path to the folder containing screenshots of the disc menus. All image files found in the folder will be used. Files should preferably be in PNG format (due to restrictions on some trackers), but other formats can be used (jpg, jpeg, webp)", type=str, default="")
         parser.add_argument('-ih', '--imghost', nargs=1, required=False, help="Image Host", choices=['imgbb', 'ptpimg', 'imgbox', 'pixhost', 'lensdump', 'ptscreens', 'onlyimage', 'dalexni', 'zipline', 'passtheimage', 'seedpool_cdn', 'utppm'])

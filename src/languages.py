@@ -1,4 +1,5 @@
 # Upload Assistant © 2025 Audionut & wastaken7 — Licensed under UAPL v1.0
+import asyncio
 import os
 import re
 import sys
@@ -407,7 +408,8 @@ class LanguagesManager:
                         if not meta['unattended'] or (meta['unattended'] and meta.get('unattended_confirm', False)):
                             console.print(f"Audio track '{lang}' has a bitrate of {bitrate_num} kbps. Probably commentary and should be removed.")
                             try:
-                                if cli_ui.ask_yes_no(f"Remove '{lang}' from audio languages?", default=True):
+                                should_remove = await asyncio.to_thread(cli_ui.ask_yes_no, f"Remove '{lang}' from audio languages?", default=True)
+                                if should_remove:
                                     audio_language_set.discard(lang)
                                     audio_languages_ordered = [item for item in audio_languages_ordered if item != lang]
                             except EOFError:
