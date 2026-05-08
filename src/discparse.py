@@ -569,7 +569,15 @@ class DiscParse:
 
             for vob_set in filesdict.values():
                 try:
-                    ifo_file = f"VTS_{vob_set[0][:2]}_0.IFO"
+                    ifo_base = f"VTS_{vob_set[0][:2]}_0"
+                    if os.path.exists(f"{ifo_base}.IFO"):
+                        ifo_file = f"{ifo_base}.IFO"
+                    elif os.path.exists(f"{ifo_base}.BUP"):
+                        ifo_file = f"{ifo_base}.BUP"
+                        console.print(f"[yellow]IFO missing, using BUP as substitute: {ifo_file}[/yellow]")
+                    else:
+                        console.print(f"[yellow]No IFO or BUP found for {ifo_base}, skipping VOB set[/yellow]")
+                        continue
 
                     try:
                         if mediainfo_binary:
@@ -645,7 +653,12 @@ class DiscParse:
             each['main_set'] = main_set
             set = main_set[0][:2]
             each['vob'] = vob = f"{path}/VTS_{set}_1.VOB"
-            each['ifo'] = ifo = f"{path}/VTS_{set}_0.IFO"
+            ifo_path = f"{path}/VTS_{set}_0.IFO"
+            bup_path = f"{path}/VTS_{set}_0.BUP"
+            if not os.path.exists(ifo_path) and os.path.exists(bup_path):
+                console.print(f"[yellow]IFO missing for main set, using BUP as substitute: {bup_path}[/yellow]")
+                ifo_path = bup_path
+            each['ifo'] = ifo = ifo_path
 
             # Use basenames for mediainfo processing to avoid full paths in output
             vob_basename = os.path.basename(vob)
