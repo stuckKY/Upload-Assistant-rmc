@@ -504,7 +504,7 @@ async def dvd_screenshots(
         console.print('[bold green]Reusing screenshots')
         return
 
-    ifo_mi = MediaInfo.parse(f"{meta['discs'][disc_num]['path']}/VTS_{meta['discs'][disc_num]['main_set'][0][:2]}_0.IFO", mediainfo_options={'inform_version': '1'})
+    ifo_mi = MediaInfo.parse(meta['discs'][disc_num]['ifo'], mediainfo_options={'inform_version': '1'})
     sar = 1.0
     w_sar = 1.0
     h_sar = 1.0
