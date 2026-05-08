@@ -596,6 +596,8 @@ class DiscParse:
                         vob_set_mi = MediaInfo.parse(ifo_file, output='JSON')
 
                     vob_set_mi = json.loads(vob_set_mi)
+                    if not vob_set_mi:
+                        raise ValueError("MediaInfo returned empty/null JSON")
                     tracks = vob_set_mi.get('media', {}).get('track', [])
 
                     if len(tracks) > 1:
@@ -618,6 +620,27 @@ class DiscParse:
                 if (vob_set_duration_float * 1.00) > (float(main_set_duration) * 1.10) or len(main_set) < 1:
                     main_set = vob_set
                     main_set_duration = vob_set_duration_float
+
+            if not main_set:
+                # IFO duration parsing failed for all VOB sets (e.g. PAL discs where the
+                # specialized MediaInfo binary returns null). Fall back to largest VOB set
+                # by total file size — the main feature is almost always the biggest set.
+                console.print("[yellow]IFO duration parsing failed for all VOB sets. Falling back to largest VOB set by file size.[/yellow]")
+                largest_size = 0
+                for vob_set in filesdict.values():
+                    # vob_set contains trimmed names like "01_1.VOB"; prepend "VTS_" for full name
+                    total_size = sum(
+                        os.path.getsize(os.path.join(path, f"VTS_{f}"))
+                        for f in vob_set
+                        if os.path.exists(os.path.join(path, f"VTS_{f}"))
+                    )
+                    if total_size > largest_size:
+                        largest_size = total_size
+                        main_set = vob_set
+
+            if not main_set:
+                console.print(f"[red]Could not determine main VOB set for disc at {path} — skipping.[/red]")
+                continue
 
             each['main_set'] = main_set
             set = main_set[0][:2]
