@@ -2,6 +2,8 @@
 from typing import Any, Optional
 
 from src.console import console
+from src.get_desc import DescriptionBuilder
+from src.rehostimages import RehostImagesManager
 from src.trackers.COMMON import COMMON
 from src.trackers.UNIT3D import UNIT3D
 
@@ -23,7 +25,28 @@ class LST(UNIT3D):
         self.torrent_url = f'{self.base_url}/torrents/'
         self.trumping_url = f'{self.base_url}/api/reports/torrents/'
         self.banned_groups = []
-        pass
+        self.rehost_images_manager = RehostImagesManager(config)
+
+    async def check_image_hosts(self, meta: dict[str, Any]) -> None:
+        """Re-upload to lostimg if the global upload used a different host."""
+        url_host_mapping = {
+            'lostimg.cc': 'lostimg',
+        }
+        await self.rehost_images_manager.check_hosts(
+            meta,
+            self.tracker,
+            url_host_mapping=url_host_mapping,
+            img_host_index=1,
+            approved_image_hosts=['lostimg'],
+        )
+
+    async def get_description(self, meta: dict[str, Any]) -> dict[str, str]:
+        lst_images = meta.get('LST_images_key') or meta.get('image_list')
+        return {
+            "description": await DescriptionBuilder(self.tracker, self.config).unit3d_edit_desc(
+                meta, comparison=True, image_list=lst_images
+            )
+        }
 
     async def get_additional_checks(self, meta: Meta) -> bool:
         should_continue = True

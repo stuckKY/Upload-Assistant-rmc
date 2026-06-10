@@ -1,10 +1,15 @@
 # Upload Assistant © 2025 Audionut & wastaken7 — Licensed under UAPL v1.0
+import asyncio
+import glob
+import os
 import re
 from typing import Any, Optional
 
 from src.console import console
+from src.get_desc import DescriptionBuilder
 from src.trackers.COMMON import COMMON
 from src.trackers.UNIT3D import UNIT3D
+from src.uploadscreens import UploadScreensManager
 
 Meta = dict[str, Any]
 Config = dict[str, Any]
@@ -24,7 +29,60 @@ class RF(UNIT3D):
         self.torrent_url = f'{self.base_url}/torrents/'
         self.banned_groups = []
         self.disallowed_img_hosts = ['lostimg']
-        self.approved_image_hosts = ['reelflix']
+
+    async def check_image_hosts(self, meta: dict[str, Any]) -> None:
+        """Upload screenshots to img.reelflix.cc, independently of the global image host."""
+        if meta.get('skip_imghost_upload', False):
+            return
+
+        new_images_key = 'RF_images_key'
+        if new_images_key not in meta:
+            meta[new_images_key] = []
+
+        # Gather local PNG screenshots from the tmp folder
+        screenshots_dir = os.path.join(meta['base_dir'], 'tmp', meta['uuid'])
+        skip_prefixes = ('FILE', 'PLAYLIST', 'POSTER')
+        png_files = sorted(
+            f for f in await asyncio.to_thread(glob.glob, os.path.join(screenshots_dir, '*.png'))
+            if not os.path.basename(f).startswith(skip_prefixes)
+        )
+
+        if not png_files:
+            console.print("[yellow]RF: No local screenshots found; using global image list.[/yellow]")
+            meta[new_images_key] = meta.get('image_list', [])
+            return
+
+        screens = int(meta.get('screens') or len(png_files))
+        original_imghost = meta.get('imghost')
+        meta['imghost'] = 'reelflix'
+
+        uploadscreens_manager = UploadScreensManager(self.config)
+        uploaded_images, _ = await uploadscreens_manager.upload_screens(
+            meta,
+            screens,
+            1,
+            0,
+            screens,
+            png_files[:screens],
+            {new_images_key: meta[new_images_key]},
+        )
+
+        if uploaded_images:
+            meta[new_images_key] = uploaded_images
+            console.print(f"[green]RF: Uploaded {len(uploaded_images)} image(s) to img.reelflix.cc[/green]")
+        else:
+            console.print("[yellow]RF: Reelflix image upload failed; falling back to global image list.[/yellow]")
+            meta[new_images_key] = meta.get('image_list', [])
+
+        meta['imghost'] = original_imghost
+
+    async def get_description(self, meta: dict[str, Any]) -> dict[str, str]:
+        rf_images = meta.get('RF_images_key') or meta.get('image_list')
+        return {
+            "description": await DescriptionBuilder(self.tracker, self.config).unit3d_edit_desc(
+                meta, comparison=True, image_list=rf_images
+            )
+        }
 
     async def get_additional_checks(self, meta: Meta) -> bool:
         should_continue = True
