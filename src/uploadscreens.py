@@ -546,6 +546,59 @@ async def upload_image_task(args: Sequence[Any]) -> dict[str, Any]:
                 console.print(f"[red]Unexpected error with Seedpool CDN: {e}")
                 return {'status': 'failed', 'reason': f'Unexpected error: {str(e)}'}
 
+        elif img_host == "lostimg":
+            url = "https://lostimg.cc/api/v1/images"
+            api_key = config['DEFAULT'].get('lostimg_api')
+
+            if not api_key:
+                console.print("[red]lostimg API key not found in config (lostimg_api).[/red]")
+                return {'status': 'failed', 'reason': 'Missing lostimg API key'}
+
+            try:
+                headers = {'Authorization': f'Bearer {api_key}'}
+
+                async with httpx.AsyncClient() as client, aiofiles.open(image, 'rb') as img_file:
+                    files = {'file[]': (os.path.basename(image), await img_file.read())}
+                    response = await client.post(url, headers=headers, files=files, timeout=timeout)
+
+                    if response.status_code != 200:
+                        try:
+                            error_data = response.json()
+                            reason = error_data.get('error', f'HTTP {response.status_code}')
+                        except ValueError:
+                            reason = f'HTTP {response.status_code}'
+                        console.print(f"[yellow]lostimg upload failed: {reason}[/yellow]")
+                        return {'status': 'failed', 'reason': f'lostimg upload failed: {reason}'}
+
+                    response_data = response.json()
+
+                    # API returns {"url": "..."} for one file or {"urls": [...]} for multiple
+                    if 'url' in response_data:
+                        img_url = raw_url = web_url = response_data['url']
+                    elif 'urls' in response_data and response_data['urls']:
+                        img_url = raw_url = web_url = response_data['urls'][0]
+                    else:
+                        console.print(f"[yellow]lostimg returned unexpected response: {response_data}[/yellow]")
+                        return {'status': 'failed', 'reason': 'No URL in lostimg response'}
+
+                    if meta.get('debug'):
+                        console.print(f"[green]lostimg upload successful: {raw_url}[/green]")
+
+                    return {'status': 'success', 'img_url': img_url, 'raw_url': raw_url, 'web_url': web_url, 'local_file_path': image}
+
+            except httpx.TimeoutException:
+                console.print("[red]Request to lostimg timed out.[/red]")
+                return {'status': 'failed', 'reason': 'Request timed out'}
+            except httpx.RequestError as e:
+                console.print(f"[red]Request to lostimg failed: {e}[/red]")
+                return {'status': 'failed', 'reason': str(e)}
+            except ValueError as e:
+                console.print(f"[red]Invalid JSON response from lostimg: {e}[/red]")
+                return {'status': 'failed', 'reason': 'Invalid JSON response'}
+            except Exception as e:
+                console.print(f"[red]Unexpected error with lostimg: {str(e)}[/red]")
+                return {'status': 'failed', 'reason': f'Unexpected error: {str(e)}'}
+
         elif img_host == "sharex":
             # Generic "ShareX-style" image host (IMageHosting and similar).
             url = config['DEFAULT'].get('sharex_url', 'https://img.digitalcore.club/api/upload')

@@ -147,6 +147,30 @@ class QueueManager:
         return set()
 
     @staticmethod
+    def is_disc_folder(path: str) -> bool:
+        """Return True if path is a full disc folder (contains VIDEO_TS or BDMV subfolder)."""
+        try:
+            for entry in os.scandir(path):
+                if entry.is_dir() and entry.name.upper() in ('VIDEO_TS', 'BDMV'):
+                    return True
+        except (OSError, PermissionError):
+            pass
+        return False
+
+    @staticmethod
+    def filter_discs(queue: list[str], skip_discs: bool) -> list[str]:
+        """Filter full disc folders from queue when skip_discs is True."""
+        if not skip_discs:
+            return queue
+        filtered = []
+        for item in queue:
+            if os.path.isdir(item) and QueueManager.is_disc_folder(item):
+                console.print(f"[yellow]Skipping full disc: {os.path.basename(item)}[/yellow]")
+            else:
+                filtered.append(item)
+        return filtered
+
+    @staticmethod
     async def gather_files_recursive(
         path: Union[str, bytes],
         allowed_extensions: Optional[Sequence[str]] = None,
@@ -443,13 +467,16 @@ class QueueManager:
                 exit(1)
 
         elif meta.get('queue'):
+            skip_discs = bool(meta.get('skip_discs'))
             if os.path.exists(log_file):
                 existing_queue = cast(list[str], await _read_json_file(log_file))
+                existing_queue = QueueManager.filter_discs(existing_queue, skip_discs)
 
                 if os.path.exists(path):
                     current_files = await QueueManager.gather_files_recursive(path, allowed_extensions=allowed_extensions)
                 else:
                     current_files = await QueueManager.resolve_queue_with_glob_or_split(path, paths, allowed_extensions=allowed_extensions)
+                current_files = QueueManager.filter_discs(current_files, skip_discs)
 
                 existing_set = set(existing_queue)
                 current_set = set(current_files)
@@ -561,6 +588,7 @@ class QueueManager:
                     queue = await QueueManager.gather_files_recursive(path, allowed_extensions=allowed_extensions)
                 else:
                     queue = await QueueManager.resolve_queue_with_glob_or_split(path, paths, allowed_extensions=allowed_extensions)
+                queue = QueueManager.filter_discs(queue, bool(meta.get('skip_discs')))
 
                 console.print(f"[cyan]A new queue log file will be created:[/cyan] [green]{log_file}[/green]")
                 console.print(f"[cyan]The new queue will contain {len(queue)} items.[/cyan]")

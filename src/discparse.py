@@ -236,7 +236,7 @@ class DiscParse:
                                 console.print(f"[{idx}] {playlist['file']} - {duration_str} - score {score:.2f} - {items_str}")
 
                             console.print("[bold yellow]Enter playlist numbers separated by commas, 'ALL' to select all, or press Enter to select the top-scoring playlist:")
-                            user_input_raw = cli_ui.ask_string("Select playlists: ")
+                            user_input_raw = await asyncio.to_thread(cli_ui.ask_string, "Select playlists: ")
                             user_input = (user_input_raw or "").strip().lower()
 
                             if user_input == "all":
@@ -363,7 +363,7 @@ class DiscParse:
 
                                 if not meta['unattended'] or (meta['unattended'] and meta.get('unattended_confirm', False)):
                                     console.print("[bold green]You can create a custom Edition for this playlist.")
-                                    user_input_raw = cli_ui.ask_string(f"Enter a new Edition title for playlist {playlist['file']} (or press Enter to keep the current label): ")
+                                    user_input_raw = await asyncio.to_thread(cli_ui.ask_string, f"Enter a new Edition title for playlist {playlist['file']} (or press Enter to keep the current label): ")
                                     user_input = (user_input_raw or "").strip()
                                     if user_input:
                                         bdinfo['edition'] = user_input
@@ -814,7 +814,7 @@ class DiscParse:
                             additional_info_str = ", ".join(additional_info)
                             console.print(f"{idx}: Duration: {duration} Playlist: {title_number}" + (f" ({additional_info_str})" if additional_info else ""))
 
-                        user_input_raw = cli_ui.ask_string("Enter the number of the playlist you want to select: ")
+                        user_input_raw = await asyncio.to_thread(cli_ui.ask_string, "Enter the number of the playlist you want to select: ")
                         user_input = (user_input_raw or "").strip()
 
                         try:
