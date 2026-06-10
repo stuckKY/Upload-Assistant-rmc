@@ -26,6 +26,9 @@ class LST(UNIT3D):
         self.trumping_url = f'{self.base_url}/api/reports/torrents/'
         self.banned_groups = []
         self.rehost_images_manager = RehostImagesManager(config)
+        # Don't run check_image_hosts in the global pre-upload phase;
+        # images are uploaded to lostimg lazily from get_description instead.
+        self.deferred_image_host_check = True
 
     async def check_image_hosts(self, meta: dict[str, Any]) -> None:
         """Re-upload to lostimg if the global upload used a different host."""
@@ -41,6 +44,10 @@ class LST(UNIT3D):
         )
 
     async def get_description(self, meta: dict[str, Any]) -> dict[str, str]:
+        # Upload to lostimg here rather than in the global pre-upload phase,
+        # so images are only re-hosted to lostimg when LST actually uploads.
+        if not meta.get('LST_images_key'):
+            await self.check_image_hosts(meta)
         lst_images = meta.get('LST_images_key') or meta.get('image_list')
         return {
             "description": await DescriptionBuilder(self.tracker, self.config).unit3d_edit_desc(

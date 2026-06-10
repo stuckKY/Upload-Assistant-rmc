@@ -29,6 +29,9 @@ class RF(UNIT3D):
         self.torrent_url = f'{self.base_url}/torrents/'
         self.banned_groups = []
         self.disallowed_img_hosts = ['lostimg']
+        # Don't run check_image_hosts in the global pre-upload phase;
+        # images are uploaded to reelflix lazily from get_description instead.
+        self.deferred_image_host_check = True
 
     async def check_image_hosts(self, meta: dict[str, Any]) -> None:
         """Upload screenshots to img.reelflix.cc, independently of the global image host."""
@@ -77,6 +80,10 @@ class RF(UNIT3D):
         meta['imghost'] = original_imghost
 
     async def get_description(self, meta: dict[str, Any]) -> dict[str, str]:
+        # Upload to reelflix here rather than in the global pre-upload phase,
+        # so images are only sent to img.reelflix.cc when RF actually uploads.
+        if not meta.get('RF_images_key'):
+            await self.check_image_hosts(meta)
         rf_images = meta.get('RF_images_key') or meta.get('image_list')
         return {
             "description": await DescriptionBuilder(self.tracker, self.config).unit3d_edit_desc(
