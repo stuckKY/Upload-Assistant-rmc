@@ -1085,7 +1085,8 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                                 console.print(
                                     f"[cyan]Image host debug: post-upload before {tracker_name}.check_image_hosts() image_list={len(meta.get('image_list', []) or [])} {key}={len(meta.get(key, []) or [])}[/cyan]"  # noqa: E501
                                 )
-                            await tracker_instance.check_image_hosts(meta)
+                            if hasattr(tracker_instance, 'check_image_hosts'):
+                                await tracker_instance.check_image_hosts(meta)
                             if meta.get('debug'):
                                 key = f"{tracker_name}_images_key"
                                 console.print(
