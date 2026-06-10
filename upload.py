@@ -879,7 +879,7 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                 cutoff = int(meta.get('cutoff') or 1)
                 if len(meta.get('image_list', [])) < cutoff and meta.get('skip_imghost_upload', False) is False:
                     # Validate and (if needed) rehost images to tracker-approved hosts before uploading any new screenshots.
-                    trackers_with_image_host_requirements = {'A4K', 'BHD', 'DC', 'GPW', 'HUNO', 'MTV', 'OE', 'PTP', 'STC', 'TVC'}
+                    trackers_with_image_host_requirements = {'A4K', 'BHD', 'DC', 'GPW', 'HUNO', 'MNS', 'MTV', 'OE', 'PTP', 'RF', 'RMC', 'STC', 'TVC', 'ULCX'}
 
                     relevant_trackers = [
                         t for t in cast(list[Any], meta.get('trackers', []))
@@ -937,6 +937,17 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                                         f"[cyan]Image host debug: {tracker_name}.approved_image_hosts={approved_hosts_list}[/cyan]"
                                     )
 
+                            # Collect disallowed hosts across ALL relevant trackers (independent of approved_image_hosts)
+                            disallowed_union: set[str] = set()
+                            for tracker_name in relevant_trackers:
+                                tracker_instance = tracker_instances[tracker_name]
+                                disallowed = getattr(tracker_instance, 'disallowed_img_hosts', None)
+                                if disallowed and isinstance(disallowed, (list, set, tuple)):
+                                    disallowed_union.update(str(h) for h in cast(Iterable[Any], disallowed))
+
+                            if meta.get('debug') and disallowed_union:
+                                console.print(f"[cyan]Image host debug: disallowed_union={sorted(disallowed_union)}[/cyan]")
+
                             if all_known and approved_sets and configured_hosts:
                                 common_hosts: set[str] = set()
                                 for host_set in approved_sets:
@@ -944,7 +955,9 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                                         common_hosts = set(host_set)
                                     else:
                                         common_hosts &= host_set
-                                common_configured_hosts = [h for h in configured_hosts if h in common_hosts]
+
+                                # Also exclude disallowed hosts from the common set
+                                common_configured_hosts = [h for h in configured_hosts if h in common_hosts and h not in disallowed_union]
 
                                 if meta.get('debug'):
                                     console.print(f"[cyan]Image host debug: common_hosts={sorted(common_hosts)}[/cyan]")
@@ -954,7 +967,7 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                                 if common_configured_hosts:
                                     allowed_hosts = common_configured_hosts
                                 elif common_hosts:
-                                    allowed_hosts = sorted(common_hosts)
+                                    allowed_hosts = [h for h in sorted(common_hosts) if h not in disallowed_union]
 
                                 # Prefer the user-selected host if it's valid for all relevant trackers; otherwise
                                 # fall back to the first common configured host by config priority (img_host_1..img_host_9).
@@ -973,6 +986,27 @@ async def process_meta(meta: Meta, base_dir: str, bot: Any = None) -> None:
                                             f"switching meta['imghost'] from '{meta.get('imghost')}' to '{preferred_host}'.[/cyan]"
                                         )
                                     meta['imghost'] = preferred_host
+
+                            elif disallowed_union and configured_hosts:
+                                # No approved_image_hosts defined, but some trackers disallow specific hosts
+                                allowed_hosts = [h for h in configured_hosts if h not in disallowed_union]
+
+                                if meta.get('debug'):
+                                    console.print(f"[cyan]Image host debug: disallowed-only path, allowed_hosts={allowed_hosts}[/cyan]")
+
+                                if not allowed_hosts:
+                                    console.print(
+                                        f"[yellow]Warning: all configured image hosts are disallowed by one or more trackers "
+                                        f"({sorted(disallowed_union)}). Add ptscreens, imgbb, or imgbox as a fallback img_host.[/yellow]"
+                                    )
+                                else:
+                                    current_img_host = str(meta.get('imghost') or config['DEFAULT'].get('img_host_1') or "")
+                                    if current_img_host in disallowed_union:
+                                        meta['imghost'] = allowed_hosts[0]
+                                        console.print(
+                                            f"[cyan]Switching image host from '{current_img_host}' to '{allowed_hosts[0]}' "
+                                            f"('{current_img_host}' is not supported by one or more trackers)[/cyan]"
+                                        )
 
                             elif meta.get('debug'):
                                 console.print(

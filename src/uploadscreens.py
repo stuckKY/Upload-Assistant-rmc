@@ -546,6 +546,46 @@ async def upload_image_task(args: Sequence[Any]) -> dict[str, Any]:
                 console.print(f"[red]Unexpected error with Seedpool CDN: {e}")
                 return {'status': 'failed', 'reason': f'Unexpected error: {str(e)}'}
 
+        elif img_host == "reelflix":
+            url = "https://img.reelflix.cc/api/1/upload"
+            try:
+                reelflix_img_api = config['DEFAULT'].get('reelflix_img_api')
+                if not reelflix_img_api:
+                    console.print("[red]ReelFlix image host API key not found in config (reelflix_img_api).[/red]")
+                    return {'status': 'failed', 'reason': 'Missing ReelFlix image host API key'}
+
+                headers = {'X-API-Key': reelflix_img_api}
+
+                async with httpx.AsyncClient() as client, aiofiles.open(image, 'rb') as file:
+                    files = {'source': (os.path.basename(image), await file.read())}
+
+                    response = await client.post(url, headers=headers, files=files, timeout=timeout)
+                    response_data = response.json()
+
+                    if response.status_code != 200:
+                        console.print(f'[yellow]ReelFlix image host upload failed: {response_data.get("error", {}).get("message", "Unknown error")} ({response.status_code})')
+                        return {'status': 'failed', 'reason': f'ReelFlix image host upload failed: {response_data.get("error", {}).get("message", "Unknown error")}'}
+
+                    img_url = response_data['image']['medium']['url']
+                    raw_url = response_data['image']['url']
+                    web_url = response_data['image']['url_viewer']
+
+                    if meta.get('debug'):
+                        console.print(f"[green]Image URLs: img_url={img_url}, raw_url={raw_url}, web_url={web_url}")
+
+            except httpx.TimeoutException:
+                console.print("[red]Request to ReelFlix image host timed out.[/red]")
+                return {'status': 'failed', 'reason': 'Request timed out'}
+            except httpx.RequestError as e:
+                console.print(f"[red]Request to ReelFlix image host failed: {e}[/red]")
+                return {'status': 'failed', 'reason': str(e)}
+            except ValueError as e:
+                console.print(f"[red]Invalid JSON response from ReelFlix image host: {e}[/red]")
+                return {'status': 'failed', 'reason': 'Invalid JSON response'}
+            except Exception as e:
+                console.print(f"[red]Unexpected error with ReelFlix image host: {str(e)}[/red]")
+                return {'status': 'failed', 'reason': f'Unexpected error: {str(e)}'}
+
         elif img_host == "lostimg":
             url = "https://lostimg.cc/api/v1/images"
             api_key = config['DEFAULT'].get('lostimg_api')

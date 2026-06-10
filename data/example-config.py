@@ -36,7 +36,7 @@ config = {
         # IMAGE HOSTING SETTINGS
 
         # Order of image hosts. primary host as first with others as backup
-        # Available image hosts: imgbb, ptpimg, imgbox, pixhost, lensdump, ptscreens, onlyimage, dalexni, zipline, passtheimage, seedpool_cdn, sharex, utppm, lostimg
+        # Available image hosts: imgbb, ptpimg, imgbox, pixhost, lensdump, ptscreens, onlyimage, dalexni, zipline, passtheimage, seedpool_cdn, sharex, utppm, lostimg, reelflix
         "img_host_1": "",
         "img_host_2": "",
         "img_host_3": "",
@@ -64,6 +64,8 @@ config = {
         "utppm_api": "",
         # lostimg.cc API key
         "lostimg_api": "",
+        # img.reelflix.cc API key (used only when uploading to the ReelFlix tracker)
+        "reelflix_img_api": "",
 
         # GETTING METADATA
 

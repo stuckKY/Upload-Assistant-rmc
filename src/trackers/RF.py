@@ -23,7 +23,8 @@ class RF(UNIT3D):
         self.requests_url = f'{self.base_url}/api/requests/filter'
         self.torrent_url = f'{self.base_url}/torrents/'
         self.banned_groups = []
-        pass
+        self.disallowed_img_hosts = ['lostimg']
+        self.approved_image_hosts = ['reelflix']
 
     async def get_additional_checks(self, meta: Meta) -> bool:
         should_continue = True

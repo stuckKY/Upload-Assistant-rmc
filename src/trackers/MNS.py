@@ -20,6 +20,7 @@ class MNS(UNIT3D):
         self.upload_url = f'{self.base_url}/api/torrents/upload'
         self.search_url = f'{self.base_url}/api/torrents/filter'
         self.torrent_url = f'{self.base_url}/torrents/'
+        self.disallowed_img_hosts = ['lostimg']
         self.banned_groups = [
             '4K4U', 'AROMA', 'aXXo', 'BRrip', 'BRrip', 'CK4', 'CM8', 'core', 'CrEwSaDe', 'd3g',
             'DNL', 'EMBER', 'EVO', 'FaNGDiNG0', 'FGT', 'FooKaS', 'FRDS', 'FROZEN', 'GalaxyRG', 'Grym',
